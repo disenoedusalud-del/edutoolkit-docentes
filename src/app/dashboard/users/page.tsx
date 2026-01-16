@@ -17,6 +17,8 @@ import { ArrowLeft, UserGear, ShieldCheck, Check, X, MagnifyingGlass, UserPlus }
 import { User } from "firebase/auth";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { Toast, ToastType } from "@/components/Toast";
 
 export default function UsersPage() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -74,57 +76,115 @@ export default function UsersPage() {
         }
     };
 
+    // Confirm Modal State
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => Promise<void>;
+        confirmText?: string;
+        isDestructive?: boolean;
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: async () => { },
+        confirmText: "Confirmar",
+        isDestructive: false
+    });
+    const [confirmLoading, setConfirmLoading] = useState(false);
+
+    const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+    const showToast = (message: string, type: ToastType = 'success') => {
+        setToast({ message, type });
+    };
+
     const handleAddAdmin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newAdminEmail.trim()) return;
 
         setAddingAdmin(true);
         try {
-            // Check if user exists
             const user = await getUserByEmail(newAdminEmail.trim());
 
-            if (!user) {
-                alert("Usuario no encontrado. El usuario debe registrarse e iniciar sesión en la plataforma primero (como docente/viewer) antes de poder ser nombrado administrador.");
-                setAddingAdmin(false);
-                return;
-            }
-
-            if (user.roleGlobal === 'ADMIN' || user.roleGlobal === 'SUPER_ADMIN') {
+            if (user && (user.roleGlobal === 'ADMIN' || user.roleGlobal === 'SUPER_ADMIN')) {
                 alert("Este usuario ya es administrador.");
                 setAddingAdmin(false);
                 return;
             }
 
-            // Promote
-            if (confirm(`Usuario encontrado: ${user.email}. ¿Convertir en Administrador?`)) {
-                await updateUserRole(user.uid, 'ADMIN');
-                setNewAdminEmail("");
-                await loadAdmins();
-                alert("Administrador agregado exitosamente.");
-            }
-
+            const isNew = !user;
+            setConfirmConfig({
+                isOpen: true,
+                title: isNew ? "Usuario no registrado" : "¿Convertir en Administrador?",
+                message: isNew
+                    ? `El correo ${newAdminEmail} no está en la base de datos. ¿Deseas crearlo y darle permisos de Administrador?`
+                    : `Usuario encontrado: ${user.email}. ¿Convertir en Administrador?`,
+                confirmText: isNew ? "Crear y Dar Acceso" : "Convertir en Admin",
+                isDestructive: false,
+                onConfirm: async () => {
+                    try {
+                        setConfirmLoading(true);
+                        const res = await fetch('/api/auth/promote', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: newAdminEmail.trim(), role: 'ADMIN' })
+                        });
+                        if (!res.ok) {
+                            const data = await res.json();
+                            throw new Error(data.error || "Error en el servidor");
+                        }
+                        setNewAdminEmail("");
+                        await loadAdmins();
+                        showToast(isNew ? "Nuevo administrador creado." : "Administrador actualizado.");
+                    } catch (err: any) {
+                        console.error(err);
+                        showToast(err.message || "Error al actualizar rol", "error");
+                    } finally {
+                        setConfirmLoading(false);
+                        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                    }
+                }
+            });
         } catch (error) {
             console.error(error);
-            alert("Error al buscar/agregar usuario.");
+            alert("Error al procesar la solicitud.");
         } finally {
             setAddingAdmin(false);
         }
     };
 
-    const handleDemote = async (uid: string) => {
-        if (!confirm("¿Estás seguro de quitar los permisos de administrador a este usuario? Volverá a ser DOCENTE.")) return;
-
-        setUpdating(uid);
-        try {
-            await updateUserRole(uid, 'DOCENTE');
-            // Remove from local list
-            setAdmins(prev => prev.filter(u => u.uid !== uid));
-        } catch (error) {
-            console.error(error);
-            alert("Error al actualizar rol");
-        } finally {
-            setUpdating(null);
-        }
+    const handleDemote = async (uid: string, email: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            title: "¿Quitar permisos?",
+            message: `¿Estás seguro de quitar los permisos de administrador a ${email}? Volverá a ser DOCENTE.`,
+            confirmText: "Quitar Permisos",
+            isDestructive: true,
+            onConfirm: async () => {
+                try {
+                    setConfirmLoading(true);
+                    const res = await fetch('/api/auth/promote', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, role: 'DOCENTE' })
+                    });
+                    if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || "Error al remover permisos");
+                    }
+                    await loadAdmins();
+                    showToast("Permisos removidos correctamente.");
+                } catch (error: any) {
+                    console.error(error);
+                    showToast(error.message || "Error al remover permisos", "error");
+                } finally {
+                    setConfirmLoading(false);
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        });
     };
 
     if (loading) return <Loader />;
@@ -136,9 +196,9 @@ export default function UsersPage() {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push("/dashboard")}
-                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            className="flex items-center justify-center p-2 rounded-xl text-muted-foreground hover:bg-muted hover:text-primary transition-all border border-transparent hover:border-border shadow-sm group"
                         >
-                            <ArrowLeft size={24} />
+                            <ArrowLeft size={20} className="transition-transform group-hover:-translate-x-1" />
                         </button>
                         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                             <UserGear size={32} className="text-primary" />
@@ -216,7 +276,7 @@ export default function UsersPage() {
                                             <div>
                                                 {!isSelf && !isSuperAdmin && (
                                                     <button
-                                                        onClick={() => handleDemote(user.uid)}
+                                                        onClick={() => handleDemote(user.uid, user.email)}
                                                         className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-medium bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1 rounded border border-red-100 dark:border-red-800 transition-colors"
                                                     >
                                                         Quitar Admin
@@ -241,7 +301,27 @@ export default function UsersPage() {
                         )}
                     </ul>
                 </div>
+
+                {/* Toast Notification */}
+                {toast && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />
+                )}
             </div>
+
+            <ConfirmModal
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                confirmText={confirmConfig.confirmText}
+                isDestructive={confirmConfig.isDestructive}
+                isLoading={confirmLoading}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 }

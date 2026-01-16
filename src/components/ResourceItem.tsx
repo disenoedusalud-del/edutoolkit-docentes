@@ -1,4 +1,4 @@
-import { LinkSimple, Trash, Copy, Link as LinkIcon, YoutubeLogo, GoogleDriveLogo, PencilSimple, DotsSixVertical, Check, X, Star, Cloud, VideoCamera, FilePdf, Globe, FileText, MonitorPlay } from "@phosphor-icons/react";
+import { LinkSimple, Trash, Copy, Link as LinkIcon, YoutubeLogo, GoogleDriveLogo, PencilSimple, DotsSixVertical, Check, X, Star, Cloud, VideoCamera, FilePdf, Globe, FileText, MonitorPlay, ArrowSquareOut } from "@phosphor-icons/react";
 import { Resource } from "@/lib/resources";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -16,8 +16,6 @@ interface ResourceItemProps {
     // User interactions
     isFavorite?: boolean;
     onToggleFavorite?: (res: Resource) => void;
-    isCompleted?: boolean;
-    onToggleCompleted?: (res: Resource) => void;
     onOpen?: (res: Resource) => void;
 }
 
@@ -31,8 +29,6 @@ export function ResourceItem({
     modules,
     isFavorite = false,
     onToggleFavorite,
-    isCompleted = false,
-    onToggleCompleted,
     onOpen
 }: ResourceItemProps) {
     const {
@@ -47,7 +43,7 @@ export function ResourceItem({
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.4 : (isCompleted && !isDraggable ? 0.6 : 1), // Dim if completed
+        opacity: isDragging ? 0.4 : 1, // Dim if dragging
         zIndex: isDragging ? 999 : 'auto',
     };
 
@@ -55,6 +51,7 @@ export function ResourceItem({
     const [editTitle, setEditTitle] = useState(resource.title);
     const [editUrl, setEditUrl] = useState(resource.url);
     const [editModuleId, setEditModuleId] = useState(resource.moduleId || "");
+    const [editTags, setEditTags] = useState(resource.tags?.join(", ") || "");
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -62,6 +59,7 @@ export function ResourceItem({
             setEditTitle(resource.title);
             setEditUrl(resource.url);
             setEditModuleId(resource.moduleId || "");
+            setEditTags(resource.tags?.join(", ") || "");
         }
     }, [isEditing, resource]);
 
@@ -69,10 +67,12 @@ export function ResourceItem({
         if (!editTitle.trim() || !editUrl.trim()) return;
         setSaving(true);
         try {
+            const tagsArray = editTags.split(",").map(t => t.trim()).filter(t => t.length > 0);
             await onUpdate(resource.id, {
                 title: editTitle,
                 url: editUrl,
                 moduleId: editModuleId || null as any,
+                tags: tagsArray
             });
             setIsEditing(false);
         } catch (error) {
@@ -91,62 +91,62 @@ export function ResourceItem({
         // 1. Specific Services
         if (lowerUrl.includes("youtube.com") || lowerUrl.includes("youtu.be") || lowerUrl.includes("vimeo")) {
             return {
-                icon: <YoutubeLogo size={24} className="text-red-600" weight="fill" />,
-                bgClass: "bg-red-50 border-red-100 text-red-600"
+                icon: <YoutubeLogo size={24} className="text-red-700" weight="fill" />,
+                bgClass: "bg-red-50 border-red-100 text-red-700"
             };
         }
         if (lowerUrl.includes("drive.google.com") || lowerUrl.includes("docs.google.com")) {
             // Differentiate excel/sheets? For now generic drive Green/Blue
             if (lowerUrl.includes("spreadsheets") || lowerUrl.includes("sheets")) {
                 return {
-                    icon: <FileText size={24} className="text-emerald-600" weight="fill" />, // Sheet icon ideal but FileText works
-                    bgClass: "bg-emerald-50 border-emerald-100 text-emerald-600"
+                    icon: <FileText size={24} className="text-emerald-700" weight="fill" />,
+                    bgClass: "bg-emerald-50 border-emerald-100 text-emerald-700"
                 };
             }
             return {
-                icon: <GoogleDriveLogo size={24} className="text-blue-600" weight="fill" />, // Drive is tricolor, Blue looks Pro
-                bgClass: "bg-blue-50 border-blue-100 text-blue-600"
+                icon: <GoogleDriveLogo size={24} className="text-blue-700" weight="fill" />,
+                bgClass: "bg-blue-50 border-blue-100 text-blue-700"
             };
         }
         if (lowerUrl.includes("zoom.us") || lowerUrl.includes("meet.google.com") || lowerUrl.includes("teams.microsoft")) {
             return {
-                icon: <VideoCamera size={24} className="text-sky-600" weight="fill" />,
-                bgClass: "bg-sky-50 border-sky-100 text-sky-600"
+                icon: <VideoCamera size={24} className="text-sky-700" weight="fill" />,
+                bgClass: "bg-sky-50 border-sky-100 text-sky-700"
             };
         }
 
         // 2. File Types
         if (lowerUrl.endsWith(".pdf")) {
             return {
-                icon: <FilePdf size={24} className="text-rose-600" weight="fill" />,
-                bgClass: "bg-rose-50 border-rose-100 text-rose-600"
+                icon: <FilePdf size={24} className="text-rose-700" weight="fill" />,
+                bgClass: "bg-rose-50 border-rose-100 text-rose-700"
             };
         }
         if (lowerUrl.endsWith(".doc") || lowerUrl.endsWith(".docx")) {
             return {
-                icon: <FileText size={24} className="text-blue-700" weight="fill" />,
-                bgClass: "bg-blue-50 border-blue-100 text-blue-700"
+                icon: <FileText size={24} className="text-blue-800" weight="fill" />,
+                bgClass: "bg-blue-50 border-blue-100 text-blue-800"
             };
         }
         if (lowerUrl.endsWith(".xls") || lowerUrl.endsWith(".xlsx") || lowerUrl.endsWith(".csv")) {
             return {
-                icon: <FileText size={24} className="text-emerald-600" weight="fill" />,
-                bgClass: "bg-emerald-50 border-emerald-100 text-emerald-600"
+                icon: <FileText size={24} className="text-emerald-700" weight="fill" />,
+                bgClass: "bg-emerald-50 border-emerald-100 text-emerald-700"
             };
         }
 
         // 3. Fallbacks by declared type
         if (type === 'video') {
             return {
-                icon: <MonitorPlay size={24} className="text-purple-600" weight="fill" />,
-                bgClass: "bg-purple-50 border-purple-100 text-purple-600"
+                icon: <MonitorPlay size={24} className="text-purple-700" weight="fill" />,
+                bgClass: "bg-purple-50 border-purple-100 text-purple-700"
             };
         }
 
         // Default
         return {
-            icon: <Globe size={24} className="text-indigo-500" weight="duotone" />,
-            bgClass: "bg-indigo-50 border-indigo-100 text-indigo-500"
+            icon: <Globe size={24} className="text-indigo-700" weight="duotone" />,
+            bgClass: "bg-indigo-50 border-indigo-100 text-indigo-700"
         };
     };
 
@@ -178,6 +178,13 @@ export function ResourceItem({
                             className="block w-full rounded-md border-border bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2"
                             placeholder="URL del recurso"
                         />
+                        <input
+                            type="text"
+                            value={editTags}
+                            onChange={(e) => setEditTags(e.target.value)}
+                            className="block w-full rounded-md border-border bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2"
+                            placeholder="Etiquetas (separadas por coma)"
+                        />
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                         <button
@@ -208,7 +215,6 @@ export function ResourceItem({
                 hover:shadow-sm hover:translate-x-1 border-l-4 border-l-transparent hover:border-l-indigo-500
                 ${!isDraggable ? 'cursor-pointer hover:bg-muted/30' : 'hover:bg-muted/30'}
                 ${isDragging ? 'border-2 border-dashed border-indigo-500 bg-indigo-50 !opacity-50 !translate-x-0 !shadow-none' : ''}
-                ${isCompleted && !isDraggable ? 'bg-muted/10' : ''}
             `}
             onClick={(e) => {
                 // Determine if we should open the link (Teacher Mode)
@@ -226,25 +232,7 @@ export function ResourceItem({
                     </button>
                 )}
 
-                {!isDraggable && onToggleCompleted && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleCompleted(resource);
-                        }}
-                        className={`p-1.5 rounded-full transition-all duration-200 z-10 ${isCompleted
-                            ? "text-green-600 bg-green-50 hover:bg-green-100"
-                            : "text-gray-300 hover:text-green-500 hover:bg-green-50"
-                            }`}
-                        title={isCompleted ? "Marcar como pendiente" : "Marcar como visto"}
-                    >
-                        {isCompleted ? (
-                            <Check size={20} weight="bold" />
-                        ) : (
-                            <div className="w-5 h-5 rounded-full border-2 border-current" />
-                        )}
-                    </button>
-                )}
+
 
                 {/* Favorite Toggle (Teacher Mode) - Always visible or visible on hover/active */}
                 {onToggleFavorite && (
@@ -264,21 +252,26 @@ export function ResourceItem({
                 )}
 
                 {/* Icon Container with Dynamic Background */}
-                <div className={`flex items-center justify-center h-10 w-10 rounded-lg flex-shrink-0 transition-colors ${bgClass} ${isCompleted && !isDraggable ? 'opacity-70 grayscale-[50%]' : ''}`}>
+                <div className={`flex items-center justify-center h-10 w-10 rounded-lg flex-shrink-0 transition-colors ${bgClass}`}>
                     {icon}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                        <span className={`text-sm font-semibold text-foreground group-hover:text-indigo-700 transition-colors ${isCompleted && !isDraggable ? 'line-through text-muted-foreground' : ''}`}>
+                        <span className={`text-sm font-bold text-foreground group-hover:text-primary transition-colors`}>
                             {resource.title}
                         </span>
                         {moduleName && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-muted-foreground border border-gray-200 uppercase tracking-wide">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-700 dark:bg-muted dark:text-muted-foreground border border-gray-300 dark:border-border uppercase tracking-wide">
                                 {moduleName}
                             </span>
                         )}
+                        {resource.tags && resource.tags.map(tag => (
+                            <span key={tag} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50 font-bold">
+                                #{tag}
+                            </span>
+                        ))}
                     </div>
                     <div className="flex items-center gap-2">
                         <a
@@ -321,13 +314,21 @@ export function ResourceItem({
                 </div>
             )}
 
-            {/* Visual Arrow for Clickable (Teacher Mode) */}
+            {/* Navigation Button (Teacher/Student Mode) */}
             {!isDraggable && (
-                <div className="text-gray-300 group-hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all -ml-4 group-hover:translate-x-0 translate-x-2">
-                    <LinkSimple size={20} weight="bold" />
+                <div className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <a
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-100 dark:bg-primary/20 hover:bg-primary text-indigo-900 dark:text-primary hover:text-primary-foreground rounded-lg text-sm font-bold transition-all shadow-sm border border-indigo-200 dark:border-primary/30"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <span>Ver</span>
+                        <ArrowSquareOut size={18} weight="bold" />
+                    </a>
                 </div>
             )}
-
             {/* Tailwind Force-Generate Classes (Hidden) */}
             <div className="hidden bg-red-50 border-red-100 text-red-600 bg-blue-50 border-blue-100 text-blue-600 bg-emerald-50 border-emerald-100 text-emerald-600 bg-sky-50 border-sky-100 text-sky-600 bg-rose-50 border-rose-100 text-rose-600 bg-purple-50 border-purple-100 text-purple-600 bg-indigo-50 border-indigo-100 text-indigo-500 hover:bg-yellow-50 hover:bg-green-50"></div>
         </li>

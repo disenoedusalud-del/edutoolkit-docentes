@@ -8,7 +8,7 @@ import {
 import { auth } from "@/lib/firebase/client";
 import { getAuthorizedCoursesForUser } from "@/lib/permissions";
 import { useRouter } from "next/navigation";
-import { Heart } from "@phosphor-icons/react";
+import { Eye, EyeSlash, Code } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -24,6 +24,7 @@ export default function LoginPage() {
     const [resetMessage, setResetMessage] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -159,25 +160,23 @@ export default function LoginPage() {
                             />
                         </div>
                         <div>
-                            <div className="flex justify-between items-center">
-                                <label className="block text-sm font-medium text-muted-foreground">Contraseña</label>
-                                {!isRegistering && (
-                                    <button
-                                        type="button"
-                                        onClick={() => { setIsResetting(true); setError(""); }}
-                                        className="text-xs text-primary hover:text-primary/80 transition-colors"
-                                    >
-                                        ¿Olvidaste tu contraseña?
-                                    </button>
-                                )}
+                            <label className="block text-sm font-medium text-muted-foreground mr-1">Contraseña</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 pr-10 bg-background border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-foreground transition-colors"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                    {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
-                            <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 bg-background border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-foreground transition-colors"
-                            />
                         </div>
                         <button
                             type="submit"
@@ -220,7 +219,7 @@ export default function LoginPage() {
                 )}
 
                 {!isResetting && (
-                    <div className="mt-6 text-center">
+                    <div className="mt-6 flex flex-col gap-3 text-center">
                         <button
                             type="button"
                             onClick={() => { setIsRegistering(!isRegistering); setError(""); }}
@@ -228,8 +227,26 @@ export default function LoginPage() {
                         >
                             {isRegistering ? "¿Ya tienes cuenta? Inicia sesión" : "¿No tienes cuenta? Registrate"}
                         </button>
+
+                        {!isRegistering && (
+                            <button
+                                type="button"
+                                onClick={() => { setIsResetting(true); setError(""); }}
+                                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                            >
+                                ¿Olvidaste tu contraseña?
+                            </button>
+                        )}
                     </div>
                 )}
+            </div>
+
+            <div className="absolute bottom-8 left-0 right-0 px-4">
+                <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground/60 text-center">
+                    <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em]">
+                        <span>Optimización Digital y Desarrollo por: <span className="text-foreground/80">Lic. Daniel Alberto Zavala Hernández</span></span>
+                    </div>
+                </div>
             </div>
         </div>
     );

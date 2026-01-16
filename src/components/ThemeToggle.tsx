@@ -31,8 +31,7 @@ export function ThemeToggle() {
         { id: "dark", name: "Oscuro", icon: <Moon size={18} /> },
         { id: "system", name: "Sistema", icon: <Monitor size={18} /> },
         { id: "tokyo", name: "Tokyo Night", icon: <Palette size={18} />, color: "#7aa2f7" },
-        { id: "dracula", name: "Dracula", icon: <Ghost size={18} />, color: "#ff79c6" },
-        { id: "reforest", name: "Reforest", icon: <Tree size={18} />, color: "#4ade80" },
+        { id: "solarized-light", name: "Solarized", icon: <Sun size={18} weight="duotone" />, color: "#b58900" },
     ]
 
     const getCurrentIcon = () => {

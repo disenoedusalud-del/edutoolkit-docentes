@@ -13,6 +13,8 @@ import { Loader } from "@/components/Loader";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ArrowLeft } from "@phosphor-icons/react";
+import { Toast, ToastType } from "@/components/Toast";
 
 export default function CoursesPage() {
     const [user, setUser] = useState<User | null>(null);
@@ -40,6 +42,12 @@ export default function CoursesPage() {
         isDestructive: false
     });
     const [confirmLoading, setConfirmLoading] = useState(false);
+
+    const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+    const showToast = (message: string, type: ToastType = 'success') => {
+        setToast({ message, type });
+    };
 
     const router = useRouter();
 
@@ -104,9 +112,10 @@ export default function CoursesPage() {
             setNewCourseTitle("");
             setCoverImage(null);
             await loadCourses();
+            showToast("Curso creado exitosamente.");
         } catch (error) {
             console.error("Error creating course:", error);
-            alert("Error al crear el curso");
+            showToast("Error al crear el curso", "error");
         } finally {
             setCreating(false);
         }
@@ -117,26 +126,29 @@ export default function CoursesPage() {
         try {
             await updateCourseStatus(courseId, newStatus);
             await loadCourses();
+            showToast(newStatus === 'active' ? "Curso activado." : "Curso archivado.");
         } catch (error) {
             console.error("Error updating status:", error);
+            showToast("Error al actualizar estado", "error");
         }
     };
 
     const handleDeleteCourse = async (courseId: string) => {
         setConfirmConfig({
             isOpen: true,
-            title: "¿Eliminar curso permanentemente?",
-            message: "Esta acción NO se puede deshacer.\n\nSe eliminará el curso y TODO su contenido, incluyendo módulos y recursos. Los archivos en almacenamiento permanecerán pero perderán su referencia.",
-            confirmText: "Eliminar Curso",
+            title: "⚠️ ¿ELIMINAR CURSO PERMANENTEMENTE?",
+            message: "¡CUIDADO! Esta acción borrará TODO y no se puede deshacer:\n\n1. Se eliminarán todos los MÓDULOS y RECURSOS del curso.\n2. Se revocarán todos los ACCESOS de los docentes a este curso.\n3. Los archivos en la nube perderán su vínculo con la plataforma.\n\n¿Estás completamente seguro?",
+            confirmText: "¡Sí, eliminar todo!",
             isDestructive: true,
             onConfirm: async () => {
                 try {
                     setConfirmLoading(true);
                     await deleteCourse(courseId);
                     await loadCourses();
+                    showToast("Curso eliminado permanentemente.");
                 } catch (error) {
                     console.error("Error deleting course:", error);
-                    alert("Error al eliminar el curso.");
+                    showToast("Error al eliminar el curso", "error");
                 } finally {
                     setConfirmLoading(false);
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
@@ -159,9 +171,10 @@ export default function CoursesPage() {
                     </div>
                     <button
                         onClick={() => router.push("/dashboard")}
-                        className="text-primary hover:text-indigo-800 dark:hover:text-indigo-400 font-medium transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-primary transition-all border border-transparent hover:border-border shadow-sm group"
                     >
-                        &larr; Volver al Dashboard
+                        <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+                        Volver al Dashboard
                     </button>
                 </div>
 
@@ -281,6 +294,15 @@ export default function CoursesPage() {
                 onConfirm={confirmConfig.onConfirm}
                 onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
             />
+
+            {/* Toast Notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 }

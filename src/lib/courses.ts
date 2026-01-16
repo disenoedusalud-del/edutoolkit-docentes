@@ -76,9 +76,18 @@ export async function getCoursesByIds(ids: string[]): Promise<Course[]> {
 }
 
 export async function deleteCourse(courseId: string) {
+    // 1. Delete associated data (cascade)
+    const collectionsToClean = ["course_access", "modules", "resources"];
+
+    for (const colName of collectionsToClean) {
+        const colRef = collection(db, colName);
+        const q = query(colRef, where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+
+        const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(deletePromises);
+    }
+
+    // 2. Delete the course document itself
     await deleteDoc(doc(db, "courses", courseId));
-    // Ideally we should also delete subcollections (resources) and storage files
-    // But for MVP Firestore deletion of parent doesn't auto-delete subcollections.
-    // We will leave orphan subcollections for now or handle them in cloud functions later.
-    // For storage, we can delete the folder ideally.
 }

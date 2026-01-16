@@ -20,7 +20,15 @@ export async function ensureUserProfile(user: User): Promise<UserProfile | null>
 
     if (userSnap.exists()) {
         const data = userSnap.data();
-        // Migration/Fallback: if roleGlobal missing, map from legacy role
+        // Automatic Migration: if document has old 'role' but not 'roleGlobal'
+        if (!data.roleGlobal && data.role) {
+            try {
+                await updateDoc(userRef, { roleGlobal: data.role });
+                data.roleGlobal = data.role;
+            } catch (e) {
+                console.error("Migration error:", e);
+            }
+        }
         const roleGlobal = data.roleGlobal || data.role || "DOCENTE";
         return { ...data, roleGlobal } as UserProfile;
     } else {

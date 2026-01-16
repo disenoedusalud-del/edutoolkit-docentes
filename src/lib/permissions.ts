@@ -147,6 +147,17 @@ export async function getRecentAccessSuggestions(): Promise<{ email: string; nam
     return Array.from(uniqueMap.entries()).map(([email, name]) => ({ email, name }));
 }
 
+export async function getAllPermissions(): Promise<CoursePermission[]> {
+    const permissionsRef = collection(db, "course_access");
+    const q = query(permissionsRef, orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    } as CoursePermission));
+}
+
 export async function getUserNameFromPermissions(email: string): Promise<string | null> {
     const normalizedEmail = email.toLowerCase().trim();
     const permissionsRef = collection(db, "course_access");

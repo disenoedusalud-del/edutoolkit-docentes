@@ -26,7 +26,11 @@ import {
     FilePdf,
     Globe,
     FileText,
-    MonitorPlay
+    MonitorPlay,
+    ShieldCheck,
+    Code,
+    Info,
+    X
 } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -40,6 +44,7 @@ export default function DashboardPage() {
     const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
     const [loading, setLoading] = useState(true);
+    const [showInfo, setShowInfo] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -165,6 +170,13 @@ export default function DashboardPage() {
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setShowInfo(true)}
+                                className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-indigo-600 border border-border"
+                                title="Información del sistema"
+                            >
+                                <Info size={20} />
+                            </button>
                             <ThemeToggle />
                             {user && (
                                 <div className="flex flex-col items-end">
@@ -192,24 +204,43 @@ export default function DashboardPage() {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => router.push("/dashboard/users")}
-                                    className="bg-indigo-600 dark:bg-indigo-700 text-white px-4 py-2 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 text-sm font-medium shadow-sm flex items-center gap-2 transition-colors"
+                                    className="bg-muted text-muted-foreground px-4 py-2 rounded-md hover:bg-muted/80 text-sm font-medium shadow-sm flex items-center gap-2 transition-colors border border-border"
                                 >
                                     <UserGear size={18} />
-                                    Permisos de Acceso
+                                    Admins
+                                </button>
+                                <button
+                                    onClick={() => router.push("/dashboard/permissions")}
+                                    className="bg-indigo-600 dark:bg-indigo-700 text-white px-4 py-2 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 text-sm font-medium shadow-sm flex items-center gap-2 transition-colors"
+                                >
+                                    <ShieldCheck size={18} />
+                                    Accesos a Cursos
                                 </button>
                                 <button
                                     onClick={() => router.push("/dashboard/courses")}
                                     className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 text-sm font-medium shadow-sm transition-colors border border-transparent"
                                 >
-                                    Gestión de Contenido
+                                    Cursos
                                 </button>
                             </div>
                         )}
                     </div>
                     <p className="mt-2 text-muted-foreground mb-8 text-lg">
-                        Hola, bienvenido{(userProfile?.displayName || resolvedName || user!.displayName)
-                            ? ` ${userProfile?.displayName || resolvedName || user!.displayName}.`
-                            : "."}
+                        {(() => {
+                            const name = userProfile?.displayName || resolvedName || user?.displayName || "";
+                            if (!name) return "Hola, bienvenido/a.";
+
+                            const firstName = name.trim().split(' ')[0].toLowerCase();
+                            // Heuristic for Spanish names: ends in 'a' is usually feminine
+                            // We can also check for common feminine endings or specific names
+                            const isFeminine = firstName.endsWith('a') ||
+                                firstName.endsWith('ana') ||
+                                firstName.endsWith('ela') ||
+                                firstName.endsWith('ita');
+
+                            const greeting = isFeminine ? "bienvenida" : "bienvenido";
+                            return `Hola, ${greeting} ${name}.`;
+                        })()}
                         {isGlobalAdmin && " Tienes acceso total."}
                     </p>
 
@@ -224,8 +255,12 @@ export default function DashboardPage() {
                         </div>
 
                         {courses.length === 0 ? (
-                            <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
-                                <p className="text-muted-foreground">No estás inscrito en ningún curso todavía.</p>
+                            <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border px-6">
+                                <p className="text-muted-foreground">
+                                    {isGlobalAdmin
+                                        ? "No hay cursos creados todavía. Comienza agregando uno en la sección de 'Cursos'."
+                                        : "Aún no tienes acceso a ningún curso. Por favor, contacta con un administrador."}
+                                </p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -279,6 +314,59 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </main>
+
+            <footer className="mt-auto py-8 border-t border-border/40">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs font-semibold tracking-wide">
+                            <span>Optimización Digital y Desarrollo por: <span className="text-foreground font-bold">Lic. Daniel Alberto Zavala Hernández</span></span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
+            {/* System Info Modal */}
+            {showInfo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in duration-300">
+                        <div className="relative p-8">
+                            <button
+                                onClick={() => setShowInfo(false)}
+                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <div className="flex flex-col items-center text-center">
+                                <div className="p-3 bg-indigo-500/10 rounded-2xl mb-6">
+                                    <Info size={40} className="text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-foreground mb-4 font-heading">Información del Sistema</h3>
+                                <div className="space-y-6 text-sm leading-relaxed text-muted-foreground">
+                                    <p className="px-4">
+                                        Esta plataforma ha sido diseñada y desarrollada como una solución de innovación tecnológica
+                                        para el <span className="text-foreground font-semibold">Programa de Educación Continua en Salud (EDUSALUD)</span>.
+                                    </p>
+
+                                    <div className="bg-muted/50 p-6 rounded-xl border border-border/50">
+                                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-500 mb-2">Desarrollo y Diseño Técnico</p>
+                                        <p className="text-lg font-bold text-foreground">Lic. Daniel Alberto Zavala Hernández</p>
+                                    </div>
+
+
+                                </div>
+
+                                <button
+                                    onClick={() => setShowInfo(false)}
+                                    className="mt-8 w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg active:scale-[0.98]"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

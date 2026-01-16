@@ -54,7 +54,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     const [permissions, setPermissions] = useState<CoursePermission[]>([]);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-    const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+
 
     // Course Edit State
     const [isEditingCourse, setIsEditingCourse] = useState(false);
@@ -74,7 +74,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
 
     // Module Form State
     const [newModuleTitle, setNewModuleTitle] = useState("");
+    const [newModuleDescription, setNewModuleDescription] = useState("");
     const [addingModule, setAddingModule] = useState(false);
+    const [isCreatingModule, setIsCreatingModule] = useState(false);
 
     // Permission Form State
     const [accessEmail, setAccessEmail] = useState("");
@@ -325,12 +327,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                 await loadResources();
                 await loadPermissions();
 
-                // Load Favorites & Completed
                 const favs = await getUserFavorites(profile.uid);
                 setFavoriteIds(new Set(favs.map(f => f.resourceId)));
-
-                const completed = await getUserCompleted(profile.uid, unwrappedParams.id);
-                setCompletedIds(new Set(completed.map(c => c.resourceId)));
 
             } catch (error) {
                 console.error(error);
@@ -387,31 +385,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         }
     };
 
-    const handleToggleCompleted = async (res: Resource) => {
-        if (!auth.currentUser) return;
 
-        // Optimistic
-        const isCompleted = completedIds.has(res.id);
-        setCompletedIds(prev => {
-            const next = new Set(prev);
-            if (isCompleted) next.delete(res.id);
-            else next.add(res.id);
-            return next;
-        });
-
-        try {
-            await toggleCompleted(auth.currentUser.uid, res);
-        } catch (error) {
-            console.error("Error toggling completed", error);
-            // Revert
-            setCompletedIds(prev => {
-                const revert = new Set(prev);
-                if (isCompleted) revert.add(res.id);
-                else revert.delete(res.id);
-                return revert;
-            });
-        }
-    };
 
     const handleResourceOpen = async (res: Resource) => {
         if (!auth.currentUser) return;
@@ -460,20 +434,21 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     };
 
 
-
     const handleAddModule = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newModuleTitle.trim()) return;
 
-        setAddingModule(true);
+        setIsCreatingModule(true);
         try {
-            await createModule(unwrappedParams.id, newModuleTitle);
+            await createModule(unwrappedParams.id, newModuleTitle, newModuleDescription);
             setNewModuleTitle("");
+            setNewModuleDescription("");
             await loadModules();
         } catch (error) {
             console.error("Error creating module:", error);
             alert("Error al crear módulo");
         } finally {
+            setIsCreatingModule(false);
             setAddingModule(false);
         }
     };
@@ -484,8 +459,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         setConfirmConfig({
             isOpen: true,
             title: `¿Eliminar módulo "${mod?.title}"?`,
-            message: "Los recursos dentro de este módulo NO se borrarán. Se moverán automáticamente a la lista 'General' y podrás reorganizarlos después.",
-            confirmText: "Eliminar Módulo",
+            message: "Al eliminar este módulo, TODOS los recursos dentro de él también se borrarán permanentemente de la base de datos. Esta acción no se puede deshacer. ¿Deseas continuar?",
+            confirmText: "Eliminar Todo",
             isDestructive: true,
             onConfirm: async () => {
                 try {
@@ -503,9 +478,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         });
     };
 
-    const handleUpdateModule = async (id: string, title: string) => {
+    const handleUpdateModule = async (id: string, title: string, description?: string) => {
         try {
-            await updateModule(id, { title });
+            await updateModule(id, { title, description });
             await loadModules();
         } catch (error) {
             console.error("Error updating module:", error);
@@ -732,11 +707,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
             <div className="max-w-4xl mx-auto flex flex-col w-full">
                 <div className="flex justify-between items-center mb-4 w-full">
                     <button
-                        onClick={() => router.push(isTeacher && !isAdminReal ? "/dashboard" : "/dashboard/courses")}
-                        className="text-primary hover:text-indigo-800 dark:hover:text-indigo-400 flex items-center gap-2 transition-colors"
+                        onClick={() => router.push("/dashboard")}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-primary transition-all border border-transparent hover:border-border shadow-sm group"
                     >
-                        <ArrowLeft size={20} />
-                        {isTeacher && !isAdminReal ? "Volver al Dashboard" : "Volver a cursos"}
+                        <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+                        Volver al Dashboard
                     </button>
 
                     {/* Header Controls */}
@@ -883,93 +858,78 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                         onDragEnd={!isTeacher ? handleDragEnd : undefined}
                     >
                         <div className="grid grid-cols-1 gap-8 relative">
-                            {modules.map(module => (
-                                <ModuleResourceList
-                                    key={module.id}
-                                    module={module}
-                                    resources={resourcesByModule[module.id] || []}
-                                    isTeacher={isTeacher}
-                                    favoriteIds={favoriteIds}
-                                    completedIds={completedIds}
-                                    onDeleteResource={handleDeleteResource}
-                                    onDuplicateResource={handleDuplicateResource}
-                                    onUpdateResource={handleUpdateResource}
-                                    onToggleFavorite={handleToggleFavorite}
-                                    onToggleCompleted={handleToggleCompleted}
-                                    onOpenResource={handleResourceOpen}
-                                    onDeleteModule={handleDeleteModule}
-                                    onUpdateModule={handleUpdateModule}
-                                    onAddResource={handleQuickAddResource}
-                                />
-                            ))}
+                            {modules
+                                .filter(module => !isTeacher || (resourcesByModule[module.id] && resourcesByModule[module.id].length > 0))
+                                .map(module => (
+                                    <ModuleResourceList
+                                        key={module.id}
+                                        module={module}
+                                        resources={resourcesByModule[module.id] || []}
+                                        isTeacher={isTeacher}
+                                        favoriteIds={favoriteIds}
+                                        onDeleteResource={handleDeleteResource}
+                                        onDuplicateResource={handleDuplicateResource}
+                                        onUpdateResource={handleUpdateResource}
+                                        onToggleFavorite={handleToggleFavorite}
+                                        onOpenResource={handleResourceOpen}
+                                        onDeleteModule={handleDeleteModule}
+                                        onUpdateModule={handleUpdateModule}
+                                        onAddResource={handleQuickAddResource}
+                                    />
+                                ))}
 
-                            {/* General Resources (No Module) */}
-                            <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-                                <div className="bg-muted px-6 py-3 border-b border-border">
-                                    <h3 className="font-semibold text-foreground">General (Sin Módulo)</h3>
-                                </div>
-                                <SortableContext
-                                    items={generalResources.map(r => r.id)}
-                                    strategy={verticalListSortingStrategy}
-                                >
-                                    <ul className="divide-y divide-border min-h-[50px]">
-                                        {generalResources.map(res => (
-                                            <ResourceItem
-                                                key={res.id}
-                                                resource={res}
-                                                onDelete={handleDeleteResource}
-                                                onDuplicate={handleDuplicateResource}
-                                                onUpdate={handleUpdateResource}
-                                                isDraggable={!isTeacher}
-                                                modules={modules}
-                                                isFavorite={favoriteIds.has(res.id)}
-                                                onToggleFavorite={handleToggleFavorite}
-                                                isCompleted={completedIds.has(res.id)}
-                                                onToggleCompleted={handleToggleCompleted}
-                                                onOpen={handleResourceOpen}
-                                            />
-                                        ))}
-                                        {generalResources.length === 0 && (
-                                            <li className="py-8 px-6 text-center text-muted-foreground text-xs italic pointer-events-none">
-                                                {isTeacher ? "No hay recursos generales." : "Arrastra recursos aquí"}
-                                            </li>
-                                        )}
-                                    </ul>
-                                </SortableContext>
-                            </div>
+                            {/* General Resources (No Module) removed as requested */}
 
                             {/* Add Module Button (Admin) */}
                             {!isTeacher && (
                                 <div className="mt-4 flex justify-center">
                                     {addingModule ? (
-                                        <div className="flex gap-2 items-center bg-card p-3 rounded shadow-sm border border-border animate-in fade-in zoom-in duration-200">
-                                            <input
-                                                type="text"
-                                                value={newModuleTitle}
-                                                onChange={(e) => setNewModuleTitle(e.target.value)}
-                                                placeholder="Nombre del Módulo"
-                                                className="rounded border-border bg-background px-3 py-1.5 min-w-[200px] text-sm focus:ring-primary focus:border-primary"
-                                                autoFocus
-                                            />
-                                            <button
-                                                onClick={handleAddModule}
-                                                className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-medium hover:bg-primary/90"
-                                            >
-                                                Crear
-                                            </button>
-                                            <button
-                                                onClick={() => setAddingModule(false)}
-                                                className="text-muted-foreground hover:text-foreground px-3 py-1.5 text-sm"
-                                            >
-                                                Cancelar
-                                            </button>
+                                        <div className="flex flex-col gap-3 bg-card p-6 rounded-xl shadow-lg border border-border animate-in fade-in zoom-in duration-200 w-full max-w-md">
+                                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Nuevo Módulo</h3>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">Título</label>
+                                                    <input
+                                                        type="text"
+                                                        value={newModuleTitle}
+                                                        onChange={(e) => setNewModuleTitle(e.target.value)}
+                                                        placeholder="Nombre del Módulo (ej: Fundamentos)"
+                                                        className="w-full rounded-md border-border bg-background px-3 py-2 text-sm focus:ring-primary focus:border-primary font-medium"
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">Descripción (Opcional)</label>
+                                                    <textarea
+                                                        value={newModuleDescription}
+                                                        onChange={(e) => setNewModuleDescription(e.target.value)}
+                                                        placeholder="Breve explicación de qué trata el módulo..."
+                                                        className="w-full rounded-md border-border bg-background px-3 py-2 text-sm focus:ring-primary focus:border-primary min-h-[80px] resize-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end gap-2 mt-2">
+                                                <button
+                                                    onClick={() => setAddingModule(false)}
+                                                    className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button
+                                                    onClick={handleAddModule}
+                                                    disabled={!newModuleTitle.trim() || isCreatingModule}
+                                                    className="bg-primary text-primary-foreground px-6 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                                                >
+                                                    {isCreatingModule ? "Creando..." : "Crear Módulo"}
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <button
                                             onClick={() => setAddingModule(true)}
-                                            className="flex items-center gap-2 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 font-medium px-4 py-2 rounded-full border border-dashed border-border hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                                            className="flex items-center gap-2 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 font-bold px-6 py-3 rounded-full border border-dashed border-border hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all shadow-sm group"
                                         >
-                                            <Plus size={18} />
+                                            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
                                             Agregar Módulo
                                         </button>
                                     )}
@@ -1028,11 +988,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                                     <div>
                                         <label className="block text-sm font-medium text-muted-foreground mb-1">Asignar a Módulo</label>
                                         <select
+                                            required
                                             value={resModule}
                                             onChange={(e) => setResModule(e.target.value)}
                                             className="w-full rounded-md border-border bg-background border shadow-sm px-4 py-2 focus:ring-primary focus:border-primary"
                                         >
-                                            <option value="">General (Sin módulo)</option>
+                                            <option value="" disabled>Selecciona un módulo...</option>
                                             {modules.map(m => (
                                                 <option key={m.id} value={m.id}>{m.title}</option>
                                             ))}
