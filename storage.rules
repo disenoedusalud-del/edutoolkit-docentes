@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper to check if user is Admin in Firestore
+    function isAdmin() {
+      return request.auth != null && 
+        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+        (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.roleGlobal == 'ADMIN' ||
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.roleGlobal == 'SUPER_ADMIN');
+    }
+
+    match /courses/{courseId}/{allPaths=**} {
+      // Anyone authenticated can view course images
+      allow read: if request.auth != null;
+      // Only admins can upload/update course covers or files
+      allow write: if isAdmin() && request.resource.size < 5 * 1024 * 1024; // 5MB Limit
+    }
+
+    // Default rule for other paths
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+  }
+}

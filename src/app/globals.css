@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+}
+
+/* 
+  Custom Theme Definitions 
+  We use CSS variables to abstract colors. The implementation in app components 
+  can just use bg-background, text-foreground, bg-card, etc.
+*/
+
+:root {
+  /* LIGHT MODE (Default) */
+  --background: #f9fafb;
+  /* gray-50 */
+  --foreground: #111827;
+  /* gray-900 */
+
+  --card: #ffffff;
+  --card-foreground: #111827;
+
+  --primary: #4f46e5;
+  /* indigo-600 */
+  --primary-foreground: #ffffff;
+
+  --muted: #f3f4f6;
+  /* gray-100 */
+  --muted-foreground: #6b7280;
+  /* gray-500 */
+
+  --border: #e5e7eb;
+  /* gray-200 */
+}
+
+/* DARK MODE (Standard) */
+[data-theme='dark'] {
+  --background: #0f172a;
+  /* slate-900 */
+  --foreground: #f1f5f9;
+  /* slate-100 */
+
+  --card: #1e293b;
+  /* slate-800 */
+  --card-foreground: #f1f5f9;
+
+  --primary: #818cf8;
+  /* indigo-400 */
+  --primary-foreground: #0f172a;
+
+  --muted: #1e293b;
+  /* slate-800 */
+  --muted-foreground: #94a3b8;
+  /* slate-400 */
+
+  --border: #334155;
+  /* slate-700 */
+}
+
+/* TOKYO NIGHT (Developer Theme) */
+[data-theme='tokyo'] {
+  --background: #1a1b26;
+  --foreground: #c0caf5;
+
+  --card: #24283b;
+  --card-foreground: #c0caf5;
+
+  --primary: #7aa2f7;
+  --primary-foreground: #1a1b26;
+
+  --muted: #24283b;
+  --muted-foreground: #565f89;
+
+  --border: #414868;
+}
+
+/* DRACULA (High Contrast) */
+[data-theme='dracula'] {
+  --background: #282a36;
+  --foreground: #f8f8f2;
+
+  --card: #44475a;
+  --card-foreground: #f8f8f2;
+
+  --primary: #ff79c6;
+  --primary-foreground: #282a36;
+
+  --muted: #44475a;
+  --muted-foreground: #6272a4;
+
+  --border: #6272a4;
+}
+
+/* REFOREST (Nature) */
+[data-theme='reforest'] {
+  --background: #1a2f23;
+  /* Deep green */
+  --foreground: #e8f5e9;
+
+  --card: #2e4a3d;
+  --card-foreground: #e8f5e9;
+
+  --primary: #4ade80;
+  /* green-400 */
+  --primary-foreground: #064e3b;
+
+  --muted: #2e4a3d;
+  --muted-foreground: #8aa899;
+
+  --border: #3d5e4f;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

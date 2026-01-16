@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user has Admin or Super Admin global role
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleGlobal == 'ADMIN' || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleGlobal == 'SUPER_ADMIN');
+    }
+
+    // Helper to check if a user has explicit access to a specific course
+    function hasCourseAccess(courseId) {
+      return isAuthenticated() && (
+        isAdmin() || 
+        exists(/databases/$(database)/documents/course_access/$(request.auth.token.email.lower() + "_" + courseId)) ||
+        // Fallback for cases where we don't use the composite ID if you have many records
+        query(/databases/$(database)/documents/course_access, [["courseId", "==", courseId], ["email", "==", request.auth.token.email.lower()]]).size() > 0
+      );
+    }
+    
+    // Simplified hasAccess for list queries
+    function canReadCourse(courseId) {
+       return isAdmin() || isAuthenticated(); // Keep it open for list but UI filters. 
+       // For maximum security in production, users should only be able to read IF they have a permission doc.
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAdmin();
+    }
+
+    // Courses Collection
+    match /courses/{courseId} {
+      // Allow read if Admin or if they are authenticated (the UI will filter the list)
+      // To strictly prevent unauthorized reads, we'd need a more complex query setup.
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Resources Collection
+    match /resources/{resourceId} {
+      // Resources are readable by authenticated users
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Modules Collection
+    match /modules/{moduleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Course Access/Permissions Collection
+    match /course_access/{accessId} {
+      // Allow users to read their own permissions to see which courses they can access
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.email.lower() == request.auth.token.email.lower());
+      allow write: if isAdmin();
+    }
+
+    // User Interactions (Favorites & Completed)
+    match /user_interactions/{id} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+  }
+}
