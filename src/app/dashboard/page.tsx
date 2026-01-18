@@ -162,8 +162,11 @@ export default function DashboardPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex">
-                            <div className="flex-shrink-0 flex items-center">
-                                <span className="text-xl font-bold text-primary">EduToolkit</span>
+                            <div className="flex-shrink-0 flex items-center gap-2">
+                                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-md shadow-primary/20">
+                                    <span className="text-primary-foreground font-black text-lg italic">ET</span>
+                                </div>
+                                <span className="text-xl font-bold text-primary tracking-tight">EduToolkit</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">

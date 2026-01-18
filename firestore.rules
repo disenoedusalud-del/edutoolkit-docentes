@@ -16,21 +16,7 @@ service cloud.firestore {
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleGlobal == 'SUPER_ADMIN');
     }
 
-    // Helper to check if a user has explicit access to a specific course
-    function hasCourseAccess(courseId) {
-      return isAuthenticated() && (
-        isAdmin() || 
-        exists(/databases/$(database)/documents/course_access/$(request.auth.token.email.lower() + "_" + courseId)) ||
-        // Fallback for cases where we don't use the composite ID if you have many records
-        query(/databases/$(database)/documents/course_access, [["courseId", "==", courseId], ["email", "==", request.auth.token.email.lower()]]).size() > 0
-      );
-    }
-    
-    // Simplified hasAccess for list queries
-    function canReadCourse(courseId) {
-       return isAdmin() || isAuthenticated(); // Keep it open for list but UI filters. 
-       // For maximum security in production, users should only be able to read IF they have a permission doc.
-    }
+
 
     // Users Collection
     match /users/{userId} {
