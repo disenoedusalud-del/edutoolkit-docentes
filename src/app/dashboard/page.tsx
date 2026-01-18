@@ -28,9 +28,7 @@ import {
     FileText,
     MonitorPlay,
     ShieldCheck,
-    Code,
-    Info,
-    X
+    Code
 } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -44,7 +42,6 @@ export default function DashboardPage() {
     const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
     const [loading, setLoading] = useState(true);
-    const [showInfo, setShowInfo] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -170,13 +167,7 @@ export default function DashboardPage() {
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => setShowInfo(true)}
-                                className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-indigo-600 border border-border"
-                                title="Información del sistema"
-                            >
-                                <Info size={20} />
-                            </button>
+
                             <ThemeToggle />
                             {user && (
                                 <div className="flex flex-col items-end">
@@ -325,48 +316,7 @@ export default function DashboardPage() {
                 </div>
             </footer>
 
-            {/* System Info Modal */}
-            {showInfo && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in duration-300">
-                        <div className="relative p-8">
-                            <button
-                                onClick={() => setShowInfo(false)}
-                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
 
-                            <div className="flex flex-col items-center text-center">
-                                <div className="p-3 bg-indigo-500/10 rounded-2xl mb-6">
-                                    <Info size={40} className="text-indigo-600 dark:text-indigo-400" />
-                                </div>
-                                <h3 className="text-xl font-bold text-foreground mb-4 font-heading">Información del Sistema</h3>
-                                <div className="space-y-6 text-sm leading-relaxed text-muted-foreground">
-                                    <p className="px-4">
-                                        Esta plataforma ha sido diseñada y desarrollada como una solución de innovación tecnológica
-                                        para el <span className="text-foreground font-semibold">Programa de Educación Continua en Salud (EDUSALUD)</span>.
-                                    </p>
-
-                                    <div className="bg-muted/50 p-6 rounded-xl border border-border/50">
-                                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-500 mb-2">Desarrollo y Diseño Técnico</p>
-                                        <p className="text-lg font-bold text-foreground">Lic. Daniel Alberto Zavala Hernández</p>
-                                    </div>
-
-
-                                </div>
-
-                                <button
-                                    onClick={() => setShowInfo(false)}
-                                    className="mt-8 w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg active:scale-[0.98]"
-                                >
-                                    Cerrar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

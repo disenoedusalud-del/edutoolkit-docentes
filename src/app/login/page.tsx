@@ -112,21 +112,14 @@ export default function LoginPage() {
 
             <div className="w-full max-w-md p-8 bg-card rounded-lg shadow-md border border-border">
 
-                <div className="flex flex-col items-center justify-center mb-8">
-                    {mounted ? (
-                        <img
-                            src={resolvedTheme === 'dark'
-                                ? "/images/logo_edusalud-blanco.svg"
-                                : "/images/logo_edusalud-color.svg"}
-                            alt="EduSalud"
-                            className="h-24 w-auto object-contain mb-4"
-                        />
-                    ) : (
-                        <div className="h-24 w-auto mb-4 flex items-center justify-center">
-                            <div className="h-24 w-24 bg-transparent" />
+                <div className="flex flex-col items-center justify-center mb-10">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                            <span className="text-primary-foreground font-black text-xl italic">ET</span>
                         </div>
-                    )}
-                    <span className="text-xs text-muted-foreground font-semibold uppercase tracking-[0.2em]">Panel Docente</span>
+                        <span className="text-3xl font-black tracking-tighter text-foreground decoration-primary decoration-4">EduToolkit</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.3em] bg-muted px-2 py-0.5 rounded">Panel Docente</span>
                 </div>
 
                 <h1 className="mb-6 text-lg font-medium text-center text-muted-foreground">
