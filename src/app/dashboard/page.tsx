@@ -309,15 +309,7 @@ export default function DashboardPage() {
                 </div>
             </main>
 
-            <footer className="mt-auto py-8 border-t border-border/40">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <div className="flex items-center gap-2 text-xs font-semibold tracking-wide">
-                            <span>Optimización Digital y Desarrollo por: <span className="text-foreground font-bold">Lic. Daniel Alberto Zavala Hernández</span></span>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+
 
 
         </div>
