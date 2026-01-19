@@ -8,7 +8,7 @@ import {
 import { auth } from "@/lib/firebase/client";
 import { getAuthorizedCoursesForUser } from "@/lib/permissions";
 import { useRouter } from "next/navigation";
-import { Eye, EyeSlash, Code } from "@phosphor-icons/react";
+import { Eye, EyeSlash, Code, ChalkboardTeacher } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -119,7 +119,12 @@ export default function LoginPage() {
                         </div>
                         <span className="text-3xl font-black tracking-tighter text-foreground decoration-primary decoration-4">EduToolkit</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.3em] bg-muted px-2 py-0.5 rounded">Panel Docente</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-border/50 shadow-sm">
+                        <ChalkboardTeacher size={16} weight="duotone" className="text-primary" />
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+                            Panel Docente
+                        </span>
+                    </div>
                 </div>
 
                 <h1 className="mb-6 text-lg font-medium text-center text-muted-foreground">
