@@ -237,7 +237,7 @@ export default function LoginPage() {
             <div className="absolute bottom-8 left-0 right-0 px-4">
                 <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground/60 text-center">
                     <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em]">
-                        <span>© 2026 Lic. Daniel Alberto Zavala Hernández. Todos los derechos reservados.</span>
+                        <span>© 2026. Desarrollado por: <span className="text-foreground/80">Lic. Daniel Alberto Zavala Hernández</span></span>
                     </div>
                 </div>
             </div>
